@@ -80,20 +80,20 @@
       button:hover {
         background: #1b6f86;
       }
-      .bmkg {
+      /* .bmkg {
         display: flex;
         gap: 6px;
         align-items: center;
         font-size: 13px;
-      }
-      .bmkg span {
+      } */
+      /* .bmkg span {
         white-space: nowrap;
       }
       .bmkg button {
         flex: 1;
         padding: 6px 4px;
         background: #1b6f86;
-      }
+      } */
       :focus-visible {
         outline: 3px solid #1b6f86;
         outline-offset: 2px;
@@ -133,13 +133,13 @@
           <label for="a"><span>Kecepatan angin</span><b id="va"></b></label>
           <input id="a" type="range" min="0" max="4" step="0.01" value="1" />
         </div>
-        <div class="bmkg">
+        <!-- <div class="bmkg">
           <span>Data BMKG:</span> <button data-tahun="2021">2021</button
           ><button data-tahun="2022">2022</button>
           <button data-tahun="2023">2023</button
           ><button data-tahun="2024">2024</button>
           <button data-tahun="2025">2025</button>
-        </div>
+        </div> -->
         <button id="reset">Kembalikan pantai</button>
       </div>
     </div>
@@ -148,17 +148,16 @@
       import * as THREE from "three";
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-      /* ===== MODEL (dari jawaban klien): ubah angka di sini kalau data berubah ===== */
-      const GEL_MAKS = 1.5; // m, maksimum slider gelombang
-      const ANGIN_MAKS = 4; // m/s, maksimum slider angin
-      const PENGARUH_ANGIN = 0.1; // m tambahan tinggi gelombang tiap 1 m/s angin (ASUMSI)
-      const AMBANG_MULAI = 0.1; // m, gelombang efektif di bawah ini: tidak ada abrasi
-      const AMBANG_GELOMBANG = 0.5; // m, di bawah ini abrasi kecil, di atasnya makin cepat
-      const DAYA_KECIL = 0.15; // daya pengikis pada 0,5 m (batas "abrasi kecil")
-      const RES_AIR_LAUT = 12; // Ohm.m, 0-12 dianggap air laut
-      const RES_LEMPUNG_MAKS = 200; // Ohm.m, batas atas lempung (tabel penelitian: 16-200)
-      const RES_TAHAN = 250; // Ohm.m, di atas ini material kuat: tidak terabrasi
-      const KECEPATAN_EROSI = 0.35; // skala kecepatan pengikisan di layar
+      const GEL_MAKS = 1.5;
+      const ANGIN_MAKS = 4;
+      const PENGARUH_ANGIN = 0.1;
+      const AMBANG_MULAI = 0.1;
+      const AMBANG_GELOMBANG = 0.5;
+      const DAYA_KECIL = 0.15;
+      const RES_AIR_LAUT = 12;
+      const RES_LEMPUNG_MAKS = 200;
+      const RES_TAHAN = 400;
+      const KECEPATAN_EROSI = 0.35;
 
       function hitung(rho, H, V) {
         const Heff = H + PENGARUH_ANGIN * V; // gelombang efektif (m)
@@ -203,14 +202,13 @@
       function katAng(x) {
         return x < 1.5 ? "Rendah" : x < 2.5 ? "Sedang" : "Tinggi";
       }
-      const BMKG = {
-        2021: [0.58, 1.8],
-        2022: [0.46, 1.46],
-        2023: [0.28, 0.6],
-        2024: [0.28, 0.69],
-        2025: [0.34, 1.63],
-      };
-      /* ========================================================= */
+      // const BMKG = {
+      //   2021: [0.58, 1.8],
+      //   2022: [0.46, 1.46],
+      //   2023: [0.28, 0.6],
+      //   2024: [0.28, 0.69],
+      //   2025: [0.34, 1.63],
+      // };
 
       const X0 = -18,
         X1 = 32,
@@ -248,7 +246,7 @@
         return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
       }
       function awal(x, z) {
-        const xx = x - (1.2 * Math.sin(z * 0.35) + 0.6 * Math.sin(z * 0.9 + 1)); // garis pantai berkelok
+        const xx = x - (1.2 * Math.sin(z * 0.35) + 0.6 * Math.sin(z * 0.9 + 1));
         let y =
           xx < 0
             ? xx * 0.12
@@ -257,7 +255,7 @@
         y += 0.14 * Math.sin(z * 0.6) * sm(0, 6, xx);
         return Math.max(-2.6, y);
       }
-      const keras = new Float32Array(N); // kekerasan tanah acak: area lunak terkikis lebih cepat
+      const keras = new Float32Array(N);
       for (let iz = 0; iz < NZ; iz++)
         for (let ix = 0; ix < NX; ix++) {
           const x = X0 + ix * DX,
@@ -269,7 +267,7 @@
                 0.4 * noise(x * 0.9 + 7, z * 0.9 + 3));
         }
       const lantai = new Float32Array(N),
-        takik = new Float32Array(N); // lantai gerus di bawah muka air, takik di kaki tebing
+        takik = new Float32Array(N);
       for (let iz = 0; iz < NZ; iz++)
         for (let ix = 0; ix < NX; ix++)
           lantai[iz * NX + ix] =
@@ -308,7 +306,6 @@
         return g;
       }
 
-      /* ----- adegan ----- */
       const wadah = document.getElementById("tampil");
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -358,7 +355,6 @@
       matahari.shadow.normalBias = 0.05;
       scene.add(matahari);
 
-      /* daratan */
       const gDarat = buatGeometri(3);
       const darat = new THREE.Mesh(
         gDarat,
@@ -369,7 +365,6 @@
       darat.castShadow = true;
       scene.add(darat);
 
-      /* laut: warna dan transparansi mengikuti kedalaman, busa di tepi */
       const gLaut = buatGeometri(4);
       const bahanLaut = new THREE.MeshPhongMaterial({
         vertexColors: true,
@@ -388,7 +383,6 @@
         cBusa = new THREE.Color(0xf4fbfa),
         cc = new THREE.Color();
 
-      /* partikel angin */
       const NP = 90,
         pp = new Float32Array(NP * 3);
       for (let i = 0; i < NP; i++) {
@@ -420,7 +414,6 @@
       new ResizeObserver(ukuran).observe(wadah);
       ukuran();
 
-      /* ----- warna daratan: pasir, tebing merah (lempung serpih), rumput, pasir basah ----- */
       const c = new THREE.Color();
       const kPasir = new THREE.Color(0xdccb9f),
         kTebing = new THREE.Color(0xb9552b),
@@ -443,7 +436,7 @@
             basah[i] =
               ps[3 * i + 1] > h[i] + 0.02
                 ? 1
-                : Math.max(0, basah[i] - dt * 0.4); // pasir basah pelan mengering
+                : Math.max(0, basah[i] - dt * 0.4);
             const s =
               Math.max(
                 ix > 0 ? Math.abs(h[i] - h[i - 1]) : 0,
@@ -467,7 +460,6 @@
         perbaruiPohon();
       }
 
-      /* ----- dinding: blok terlihat padat (irisan tanah dan air) ----- */
       const BASE = -3.6,
         R = 4;
       function titikTepi() {
@@ -583,7 +575,7 @@
           d.titik.forEach((q, j) => {
             const atas = ps[3 * q.i + 1],
               dasar = h[q.i],
-              bawah = atas - dasar < 0.12 ? atas : dasar; // air dangkal tidak digambar di dinding
+              bawah = atas - dasar < 0.12 ? atas : dasar;
             for (let r = 0; r < 2; r++) {
               const o = (j * 2 + r) * 3,
                 cw = r ? wAtas : wBawah;
@@ -838,14 +830,14 @@
       }
       [sR, sG, sA].forEach((s) => s.addEventListener("input", labelSlider));
       labelSlider();
-      document.querySelectorAll("[data-tahun]").forEach((b) =>
-        b.addEventListener("click", () => {
-          const d = BMKG[b.dataset.tahun];
-          sG.value = d[0];
-          sA.value = d[1];
-          labelSlider();
-        }),
-      );
+      // document.querySelectorAll("[data-tahun]").forEach((b) =>
+      //   b.addEventListener("click", () => {
+      //     const d = BMKG[b.dataset.tahun];
+      //     sG.value = d[0];
+      //     sA.value = d[1];
+      //     labelSlider();
+      //   }),
+      // );
 
       let xs0 = 0,
         kotor = true;
@@ -859,7 +851,7 @@
       document.getElementById("reset").addEventListener("click", ulang);
       ulang();
 
-      const lompat = +new URLSearchParams(location.search).get("lompat") || 0; // opsional: percepat simulasi untuk uji
+      const lompat = +new URLSearchParams(location.search).get("lompat") || 0;
       let t = 0,
         terakhir = performance.now();
       function putar(now) {
