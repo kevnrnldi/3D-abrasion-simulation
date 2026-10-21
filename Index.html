@@ -70,7 +70,7 @@
       const KECEPATAN_EROSI = 0.35;
 
       function hitung(rho, H, V) {
-        const Heff = H + PENGARUH_ANGIN * V; // gelombang efektif (m)
+        const Heff = H + PENGARUH_ANGIN * V;
         const Hmaks = GEL_MAKS + PENGARUH_ANGIN * ANGIN_MAKS;
         const daya =
           Heff < AMBANG_MULAI
@@ -810,7 +810,7 @@
           "</b><br>Garis pantai mundur: " +
           mundur.toFixed(1) +
           " m<br>" +
-          "Gelombang efektif: " +
+          "Laju Gelombang : " +
           r.Heff.toFixed(2) +
           " m | Laju: " +
           r.laju.toFixed(2) +
