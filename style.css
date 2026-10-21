@@ -1,0 +1,90 @@
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background: #0b3c49;
+  color: #10272d;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+#tampil {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  touch-action: none;
+}
+#tampil canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#hud {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  pointer-events: none;
+  max-width: 78%;
+}
+#hud b {
+  font-size: 16px;
+}
+#panel {
+  background: #f3f7f6;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 5px;
+}
+.baris label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+input[type="range"] {
+  width: 100%;
+  height: 26px;
+  margin: 0;
+}
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px;
+  background: #0b3c49;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+button:hover {
+  background: #1b6f86;
+}
+/* .bmkg {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 13px;
+      } */
+/* .bmkg span {
+        white-space: nowrap;
+      }
+      .bmkg button {
+        flex: 1;
+        padding: 6px 4px;
+        background: #1b6f86;
+      } */
+:focus-visible {
+  outline: 3px solid #1b6f86;
+  outline-offset: 2px;
+}
