@@ -6,8 +6,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <link rel="stylesheet" href="style.css" />
     <title>Simulasi Abrasi 3D</title>
+    <link rel="stylesheet" href="style.css" />
     <style></style>
     <script type="importmap">
       {
@@ -43,13 +43,6 @@
           <label for="a"><span>Kecepatan angin</span><b id="va"></b></label>
           <input id="a" type="range" min="0" max="4" step="0.01" value="1" />
         </div>
-        <!-- <div class="bmkg">
-          <span>Data BMKG:</span> <button data-tahun="2021">2021</button
-          ><button data-tahun="2022">2022</button>
-          <button data-tahun="2023">2023</button
-          ><button data-tahun="2024">2024</button>
-          <button data-tahun="2025">2025</button>
-        </div> -->
         <button id="reset">Kembalikan pantai</button>
       </div>
     </div>
@@ -70,7 +63,7 @@
       const KECEPATAN_EROSI = 0.35;
 
       function hitung(rho, H, V) {
-        const Heff = H + PENGARUH_ANGIN * V; // gelombang efektif (m)
+        const Heff = H + PENGARUH_ANGIN * V;
         const Hmaks = GEL_MAKS + PENGARUH_ANGIN * ANGIN_MAKS;
         const daya =
           Heff < AMBANG_MULAI
@@ -112,19 +105,12 @@
       function katAng(x) {
         return x < 1.5 ? "Rendah" : x < 2.5 ? "Sedang" : "Tinggi";
       }
-      // const BMKG = {
-      //   2021: [0.58, 1.8],
-      //   2022: [0.46, 1.46],
-      //   2023: [0.28, 0.6],
-      //   2024: [0.28, 0.69],
-      //   2025: [0.34, 1.63],
-      // };
 
       const X0 = -18,
-        X1 = 32,
-        Z0 = -12,
-        Z1 = 12,
-        DX = 0.45;
+        X1 = 36,
+        Z0 = -16,
+        Z1 = 16,
+        DX = 0.5;
       const NX = Math.round((X1 - X0) / DX) + 1,
         NZ = Math.round((Z1 - Z0) / DX) + 1,
         N = NX * NZ;
@@ -221,7 +207,12 @@
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      wadah.appendChild(renderer.domElement);
+      const kanvas = renderer.domElement;
+      kanvas.style.cssText =
+        "position:absolute;left:0;top:0;width:100%;height:100%;display:block";
+      if (getComputedStyle(wadah).position === "static")
+        wadah.style.position = "relative";
+      wadah.insertBefore(kanvas, wadah.firstChild);
       const scene = new THREE.Scene();
       const cv = document.createElement("canvas");
       cv.width = 2;
@@ -235,31 +226,31 @@
       cx.fillRect(0, 0, 2, 256);
       scene.background = new THREE.CanvasTexture(cv);
       scene.background.colorSpace = THREE.SRGBColorSpace;
-      scene.fog = new THREE.Fog(0xd6ebf0, 55, 130);
-      const kamera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
-      kamera.position.set(-12, 10, 17);
+      scene.fog = new THREE.Fog(0xd6ebf0, 70, 150);
+      const kamera = new THREE.PerspectiveCamera(50, 1, 0.1, 260);
+      kamera.position.set(-8, 10, 21);
       const kontrol = new OrbitControls(kamera, renderer.domElement);
-      kontrol.target.set(6, 0, 0);
+      kontrol.target.set(12, 1, 0);
       kontrol.enableDamping = true;
       kontrol.enablePan = false;
       kontrol.minDistance = 8;
-      kontrol.maxDistance = 60;
+      kontrol.maxDistance = 75;
       kontrol.maxPolarAngle = Math.PI * 0.48;
 
       scene.add(new THREE.HemisphereLight(0xdcefff, 0x8a7550, 0.8));
       const matahari = new THREE.DirectionalLight(0xfff0d2, 1.25);
-      matahari.position.set(18, 24, 16);
-      matahari.target.position.set(7, 0, 0);
+      matahari.position.set(22, 26, 18);
+      matahari.target.position.set(9, 0, 0);
       scene.add(matahari.target);
       matahari.castShadow = true;
-      matahari.shadow.mapSize.set(1536, 1536);
+      matahari.shadow.mapSize.set(2048, 2048);
       Object.assign(matahari.shadow.camera, {
-        left: -36,
-        right: 36,
-        top: 30,
-        bottom: -30,
+        left: -40,
+        right: 40,
+        top: 34,
+        bottom: -34,
         near: 1,
-        far: 110,
+        far: 130,
       });
       matahari.shadow.bias = -0.0006;
       matahari.shadow.normalBias = 0.05;
@@ -321,7 +312,11 @@
         kamera.fov = kamera.aspect < 0.8 ? 64 : 48;
         kamera.updateProjectionMatrix();
       }
-      new ResizeObserver(ukuran).observe(wadah);
+      let rz = 0;
+      new ResizeObserver(() => {
+        cancelAnimationFrame(rz);
+        rz = requestAnimationFrame(ukuran);
+      }).observe(wadah);
       ukuran();
 
       const c = new THREE.Color();
@@ -329,12 +324,24 @@
         kTebing = new THREE.Color(0xb9552b),
         kRumput = new THREE.Color(0x5f8334),
         kDasar = new THREE.Color(0xb3a374);
-      function warna(y, s, b, n) {
+      const kAspal = new THREE.Color(0x505054),
+        kSetapak = new THREE.Color(0xc9b387);
+      function warna(y, s, b, n, x, z) {
         c.copy(kPasir);
         if (y < -0.1) c.lerp(kDasar, Math.min(1, (-0.1 - y) / 1.2));
         c.lerp(kTebing, sm(0.32, 0.6, s) * sm(0.1, 0.6, y));
         c.lerp(kRumput, sm(1.0, 1.7, y) * (1 - sm(0.28, 0.5, s)));
         if (y < 0.6) c.multiplyScalar(1 - 0.32 * b * (1 - sm(0.2, 0.6, y)));
+        if (x !== undefined && y > 0.8) {
+          if (Math.abs(x - (21 + 1.5 * Math.sin(z * 0.2))) < 0.9)
+            c.lerp(kAspal, 0.92);
+          else if (
+            x > 9 &&
+            x < 20.5 &&
+            Math.abs(z + 3 - 0.5 * Math.sin(x * 0.5)) < 0.5
+          )
+            c.lerp(kSetapak, 0.8);
+        }
         c.multiplyScalar(0.94 + 0.12 * n);
       }
       function perbaruiWarna(dt) {
@@ -354,7 +361,7 @@
                 iz > 0 ? Math.abs(h[i] - h[i - NX]) : 0,
                 iz < NZ - 1 ? Math.abs(h[i + NX] - h[i]) : 0,
               ) / DX;
-            warna(h[i], s, basah[i], bising[i]);
+            warna(h[i], s, basah[i], bising[i], X0 + ix * DX, Z0 + iz * DX);
             k[3 * i] = c.r;
             k[3 * i + 1] = c.g;
             k[3 * i + 2] = c.b;
@@ -502,26 +509,190 @@
         });
       }
 
-      /* ----- vegetasi dan batu ----- */
-      const bBatang = new THREE.MeshLambertMaterial({ color: 0x5a4129 }),
-        bDaun = [
-          new THREE.MeshLambertMaterial({ color: 0x2f5d2a }),
-          new THREE.MeshLambertMaterial({ color: 0x3f7a35 }),
-        ];
+      const cacheBahan = {};
+      const mat = (w) =>
+        cacheBahan[w] ||
+        (cacheBahan[w] = new THREE.MeshLambertMaterial({ color: w }));
+      function kotak(w, t, d, wr, x = 0, y = 0, z = 0) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, t, d), mat(wr));
+        m.position.set(x, y, z);
+        return m;
+      }
+      function tabung(r, t, wr, x = 0, y = 0, z = 0) {
+        const m = new THREE.Mesh(
+          new THREE.CylinderGeometry(r, r, t, 6),
+          mat(wr),
+        );
+        m.position.set(x, y, z);
+        return m;
+      }
+      function limas(r, t, wr, y) {
+        const m = new THREE.Mesh(new THREE.ConeGeometry(r, t, 4), mat(wr));
+        m.rotation.y = Math.PI / 4;
+        m.position.y = y;
+        return m;
+      }
+      function rumah(w, d, t, dinding, atap) {
+        const g = new THREE.Group();
+        g.add(
+          kotak(w, t, d, dinding, 0, t / 2, 0),
+          limas(Math.max(w, d) * 0.82, t * 0.75, atap, t * 1.37),
+          kotak(0.45, t * 0.62, 0.06, 0x6b4a2b, 0, t * 0.31, d / 2 + 0.03),
+          kotak(0.45, 0.4, 0.06, 0xbfe3ee, w * 0.28, t * 0.55, d / 2 + 0.03),
+        );
+        return g;
+      }
+      function pondok() {
+        // pondok/gazebo wisata
+        const g = new THREE.Group();
+        g.add(
+          kotak(3, 0.15, 3, 0xb08a5a, 0, 0.3, 0),
+          limas(2.5, 1.1, 0x6f8a3a, 2.8),
+        );
+        [
+          [-1.3, -1.3],
+          [1.3, -1.3],
+          [-1.3, 1.3],
+          [1.3, 1.3],
+        ].forEach(([x, z]) => g.add(tabung(0.07, 2, 0x7a5a3a, x, 1.3, z)));
+        return g;
+      }
+      function musholla() {
+        const g = rumah(3.2, 3.2, 2.0, 0xf2efe4, 0x2f7d5b);
+        const k = new THREE.Mesh(
+          new THREE.SphereGeometry(0.35, 8, 6),
+          mat(0xe0b84a),
+        );
+        k.position.y = 3.45;
+        g.add(k);
+        return g;
+      }
+      function toilet() {
+        const g = new THREE.Group();
+        g.add(
+          kotak(1.2, 1.6, 1.2, 0x8fc3d8, 0, 0.8, 0),
+          kotak(1.4, 0.1, 1.4, 0x56758a, 0, 1.65, 0),
+          kotak(0.4, 0.9, 0.05, 0x3d5a6b, 0, 0.5, 0.62),
+        );
+        return g;
+      }
+      function lampu() {
+        const g = new THREE.Group();
+        g.add(
+          tabung(0.05, 2.6, 0x44464a, 0, 1.3, 0),
+          kotak(0.5, 0.12, 0.25, 0xe9e3c8, 0.25, 2.6, 0),
+        );
+        return g;
+      }
+      function ayunan() {
+        const g = new THREE.Group(),
+          pt = 0xf2f2ee,
+          ky = 0xcfc3a8;
+        g.add(kotak(4.4, 0.14, 3.2, ky, -1.4, 0.9, 0));
+        [
+          [-3.4, -1.4],
+          [-3.4, 1.4],
+          [0.6, -1.4],
+          [0.6, 1.4],
+        ].forEach(([x, z]) => g.add(tabung(0.07, 1.6, 0x8a7656, x, 0.1, z)));
+        g.add(
+          kotak(0.06, 0.06, 3.2, pt, -3.6, 1.9, 0),
+          kotak(4.4, 0.06, 0.06, pt, -1.4, 1.9, -1.55),
+          kotak(4.4, 0.06, 0.06, pt, -1.4, 1.9, 1.55),
+        );
+        [-1.55, -0.5, 0.5, 1.55].forEach((z) =>
+          g.add(tabung(0.03, 0.9, pt, -3.6, 1.47, z)),
+        );
+        [-1.55, 1.55].forEach((z) =>
+          [-3.6, -2.5, -1.4, -0.3].forEach((x) =>
+            g.add(tabung(0.03, 0.9, pt, x, 1.47, z)),
+          ),
+        );
+        const x0 = -3.0;
+        [-1.0, 1.0].forEach((z) => {
+          const k1 = tabung(0.06, 3.52, pt, x0 + 0.45, 2.67, z);
+          k1.rotation.z = 0.259;
+          g.add(k1);
+          const k2 = tabung(0.06, 3.52, pt, x0 - 0.45, 2.67, z);
+          k2.rotation.z = -0.259;
+          g.add(k2);
+        });
+        const bm = tabung(0.07, 2.4, pt, x0, 4.4, 0);
+        bm.rotation.x = Math.PI / 2;
+        g.add(bm);
+        [-0.3, 0.3].forEach((z) =>
+          g.add(tabung(0.015, 2.5, 0x333333, x0, 3.1, z)),
+        );
+        g.add(kotak(0.5, 0.06, 0.9, ky, x0, 1.9, 0));
+        return g;
+      }
+      const bangunan = [];
+      let hilangN = 0;
+      function pasang(g, x, z, r, miring) {
+        g.position.x = x;
+        g.position.z = z;
+        g.traverse((m) => {
+          m.castShadow = true;
+          m.receiveShadow = true;
+        });
+        scene.add(g);
+        const idx = [
+          [-r, 0],
+          [r, 0],
+          [0, -r],
+          [0, r],
+        ].map(
+          ([p, q]) =>
+            Math.round((z + q - Z0) / DX) * NX + Math.round((x + p - X0) / DX),
+        );
+        bangunan.push({
+          g,
+          idx,
+          miring: miring === undefined ? 0.3 : miring,
+          hilang: false,
+        });
+      }
+      pasang(ayunan(), 13, -3, 3, 0.25);
+      pasang(pondok(), 16, 8, 1.7);
+      [
+        [26, -6, 3.4, 2.8, 0xcfe3ea, 0xb5472f],
+        [30, 4, 3.8, 3.0, 0xf2e6c9, 0x6d7f8a],
+        [28, -12, 3.2, 2.8, 0xe9d3d0, 0x8a5a3a],
+      ].forEach(([x, z, w, d, dn, at]) =>
+        pasang(rumah(w, d, 2.1, dn, at), x, z, 2, 0.2),
+      );
+      [-7, 7].forEach((z) =>
+        pasang(lampu(), 22.6 + 1.5 * Math.sin(z * 0.2), z, 0.3, 0.5),
+      );
+
       let sd = 12345;
       const rnd = () =>
         (sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0) / 4294967296;
-      const pohon = Array.from({ length: 30 }, (_, n) => {
-        const x = 11 + rnd() * 19,
-          z = Z0 + 1 + rnd() * (Z1 - Z0 - 2);
-        const g = new THREE.Group(),
-          sk = 0.85 + 0.4 * rnd();
-        const b = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.07 * sk, 0.12 * sk, 1.1 * sk, 6),
-          bBatang,
+      function bebas(x, z, j) {
+        return (
+          Math.abs(x - (21 + 1.5 * Math.sin(z * 0.2))) > 1.4 &&
+          !bangunan.some(
+            (q) => Math.hypot(q.g.position.x - x, q.g.position.z - z) < j,
+          )
         );
-        b.position.y = 0.55 * sk;
-        g.add(b);
+      }
+      const bBatang = mat(0x5a4129),
+        bDaun = [mat(0x2f5d2a), mat(0x3f7a35)];
+      const pohon = [];
+      function tanam(g, x, z) {
+        g.traverse((m) => {
+          m.castShadow = true;
+        });
+        g.position.set(x, 0, z);
+        scene.add(g);
+        pohon.push({
+          g,
+          i: Math.round((z - Z0) / DX) * NX + Math.round((x - X0) / DX),
+        });
+      }
+      function cemara(n, sk) {
+        const g = new THREE.Group();
+        g.add(tabung(0.1 * sk, 1.1 * sk, 0x5a4129, 0, 0.55 * sk, 0));
         [
           [1.0, 0.62],
           [1.55, 0.48],
@@ -534,21 +705,54 @@
           d.position.y = y * sk;
           g.add(d);
         });
-        g.traverse((m) => {
-          m.castShadow = true;
-        });
-        g.position.set(x, 0, z);
-        scene.add(g);
-        return {
-          g,
-          i: Math.round((z - Z0) / DX) * NX + Math.round((x - X0) / DX),
-        };
-      });
+        return g;
+      }
+      for (let n = 0; n < 8; n++) {
+        const g = cemara(n, 0.9 + 0.4 * rnd());
+        g.rotation.z = 0.1 + 0.1 * rnd();
+        tanam(g, 7.5 + 3 * rnd(), Z0 + 2 + rnd() * (Z1 - Z0 - 4));
+      } // cemara condong di tepi tebing
+      for (let n = 0, k = 0; n < 44 && k < 400; k++) {
+        const x = 11 + rnd() * 25,
+          z = Z0 + 1 + rnd() * (Z1 - Z0 - 2);
+        if (bebas(x, z, 2.6)) {
+          tanam(cemara(n, 0.85 + 0.4 * rnd()), x, z);
+          n++;
+        }
+      }
+      for (let n = 0, k = 0; n < 36 && k < 400; k++) {
+        const x = 8 + rnd() * 27,
+          z = Z0 + 1 + rnd() * (Z1 - Z0 - 2);
+        if (bebas(x, z, 2.2)) {
+          // semak hijau
+          const g = new THREE.Group(),
+            sk = 0.5 + 0.5 * rnd(),
+            m = new THREE.Mesh(
+              new THREE.IcosahedronGeometry(0.5, 0),
+              mat(0x4f9a3a),
+            );
+          m.scale.set(sk * 1.3, sk * 0.8, sk * 1.3);
+          m.position.y = 0.25 * sk;
+          g.add(m);
+          tanam(g, x, z);
+          n++;
+        }
+      }
       function perbaruiPohon() {
         pohon.forEach((q) => {
           const y = h[q.i];
           q.g.position.y = y;
           q.g.visible = y > 0.4;
+        });
+        hilangN = 0;
+        bangunan.forEach((q) => {
+          const hs = q.idx.map((i) => h[i]),
+            mn = Math.min(...hs);
+          q.g.position.y = hs.reduce((a, v) => a + v, 0) / hs.length;
+          q.hilang = mn < 0.4;
+          q.g.visible = !q.hilang;
+          if (q.hilang) hilangN++;
+          q.g.rotation.z = q.miring * (1 - sm(0.4, 1.5, mn)); // miring ke arah laut saat tanah di bawahnya terkikis
         });
       }
       const bBatu = new THREE.MeshLambertMaterial({
@@ -563,22 +767,28 @@
         [-2.2, 4, 0.65],
         [-3.4, 7, 0.55],
         [-0.8, 7.5, 0.4],
-      ].forEach(([x, z, s]) => {
+        [-1.5, -13.5, 1.0],
+        [-1.0, -13, 0.7],
+        [-2, -12.5, 0.6],
+        [-2, 13, 1.0],
+        [-1.2, 13.6, 0.7],
+        [-3, -10, 0.5],
+        [-2.5, 10.5, 0.6],
+        [-1.8, -8.5, 0.4],
+      ].forEach(([x, z, sz]) => {
         const m = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), bBatu);
-        m.scale.set(s * 1.2, s * 0.8, s);
+        m.scale.set(sz * 1.2, sz * 0.8, sz);
         m.rotation.set(z, x, z * 0.5);
-        m.position.set(x, awal(x, z) + s * 0.25, z);
+        m.position.set(x, awal(x, z) + sz * 0.25, z);
         m.castShadow = true;
         m.receiveShadow = true;
         scene.add(m);
       });
 
-      /* ----- pengikisan ----- */
       function erosi(dt, laju, t) {
         const e0 = laju * KECEPATAN_EROSI * dt;
         for (let iz = 1; iz < NZ - 1; iz++)
           for (let ix = 1; ix < NX - 1; ix++) {
-            // 1) ombak membuat takik di kaki tebing, lalu bagian itu runtuh
             const i = iz * NX + ix;
             if (h[i] <= 0.02) continue;
             const depan =
@@ -597,10 +807,9 @@
             if (takik[i] > 0.04 + 0.2 * h[i]) {
               h[i] = lantai[i];
               takik[i] = 0;
-            } // runtuh menjadi lantai gerus di bawah muka air
+            }
           }
         if (Math.random() < laju * dt * 2.5) {
-          // 2) runtuhan acak berbentuk "gigitan"
           const iz = 2 + Math.floor(Math.random() * (NZ - 4));
           let ix = 1;
           while (ix < NX - 3 && h[iz * NX + ix] <= 0.02) ix++;
@@ -619,7 +828,7 @@
               }
             }
         }
-        const nb = [-1, 1, -NX, NX]; // 3) tebing sangat curam longsor pelan
+        const nb = [-1, 1, -NX, NX];
         for (let iz = 1; iz < NZ - 1; iz++)
           for (let ix = 1; ix < NX - 1; ix++) {
             const i = iz * NX + ix,
@@ -644,7 +853,6 @@
         return total / NZ;
       }
 
-      /* ----- laut ----- */
       function gerakLaut(t, Hn, Vn, keruhan) {
         const p = gLaut.attributes.position.array,
           k = gLaut.attributes.color.array;
@@ -740,14 +948,14 @@
       }
       [sR, sG, sA].forEach((s) => s.addEventListener("input", labelSlider));
       labelSlider();
-      // document.querySelectorAll("[data-tahun]").forEach((b) =>
-      //   b.addEventListener("click", () => {
-      //     const d = BMKG[b.dataset.tahun];
-      //     sG.value = d[0];
-      //     sA.value = d[1];
-      //     labelSlider();
-      //   }),
-      // );
+      document.querySelectorAll("[data-tahun]").forEach((b) =>
+        b.addEventListener("click", () => {
+          const d = BMKG[b.dataset.tahun];
+          sG.value = d[0];
+          sA.value = d[1];
+          labelSlider();
+        }),
+      );
 
       let xs0 = 0,
         kotor = true;
@@ -761,7 +969,7 @@
       document.getElementById("reset").addEventListener("click", ulang);
       ulang();
 
-      const lompat = +new URLSearchParams(location.search).get("lompat") || 0;
+      const lompat = +new URLSearchParams(location.search).get("lompat") || 0; // opsional: percepat simulasi untuk uji
       let t = 0,
         terakhir = performance.now();
       function putar(now) {
@@ -796,7 +1004,7 @@
           r.tanah === 0
             ? "Material tahan: tidak terjadi abrasi"
             : r.laju === 0
-              ? "Gelombang efektif di bawah " +
+              ? "Laju gelombang di bawah " +
                 AMBANG_MULAI.toFixed(2) +
                 " m: belum terjadi pengikisan"
               : r.Heff < AMBANG_GELOMBANG
@@ -810,7 +1018,7 @@
           "</b><br>Garis pantai mundur: " +
           mundur.toFixed(1) +
           " m<br>" +
-          "Laju Gelombang: " +
+          "Laju Gelombang : " +
           r.Heff.toFixed(2) +
           " m | Laju: " +
           r.laju.toFixed(2) +
